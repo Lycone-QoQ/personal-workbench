@@ -1,0 +1,59 @@
+name: Deploy static site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment, but do not cancel in-progress runs
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # GitHub Pages serves the site under /personal-workbench/
+      # The repo manifest is written for the root path (used by CloudStudio/TWA),
+      # so we adapt it only for this deployment without touching the repo file.
+      - name: Adapt manifest to Pages subpath
+        run: |
+          sed -i 's#"start_url": "/index.html"#"start_url": "/personal-workbench/index.html"#' manifest.json
+          sed -i 's#"scope": "/"#"scope": "/personal-workbench/"#' manifest.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+          exclude: |
+            .git
+            .github
+            node_modules
+            pb-deploy
+            dist-static
+            _*.js
+            _*.json
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
