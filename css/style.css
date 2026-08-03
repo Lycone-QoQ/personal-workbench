@@ -38,8 +38,9 @@
   --font-size-scale: 1;
   --sidebar-width: 220px;
   --transition: 0.25s ease;
-  --font-pixel: 'Press Start 2P', 'Pixelify Sans', monospace;
-  --font-pixel-cn: 'Pixelify Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  /* 手写风字体（搭配星露谷像素风描边元素） */
+  --font-pixel: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
+  --font-pixel-cn: 'ZCOOL KuaiLe', 'Ma Shan Zheng', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 /* Theme: Light (default) */
@@ -1139,6 +1140,8 @@ html[data-pixel="on"] {
   --pixel-shadow: 4px 4px 0 rgba(61, 53, 41, 0.16);
   --pixel-shadow-sm: 2px 2px 0 rgba(61, 53, 41, 0.16);
   --pixel-shadow-press: 1px 1px 0 rgba(61, 53, 41, 0.16);
+  /* 手写风：整页继承手写字体 */
+  font-family: var(--font-pixel-cn);
 }
 html[data-pixel="on"][data-theme="dark"] {
   --pixel-edge: #e8e0d8;

@@ -29,6 +29,15 @@ async function renderPodcastList(container) {
   const done = podcasts.filter(p => p.completed);
 
   container.innerHTML = `
+    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#fff7e6,#ffe9b8);border-color:#f0c674;">
+      <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <h3 style="margin:0 0 6px;">🎧 小宇宙播客</h3>
+          <p style="font-size:0.82rem;color:var(--text-secondary);margin:0;">点击自动跳转小宇宙 App，发现并收听播客节目</p>
+        </div>
+        <a href="https://www.xiaoyuzhoufm.com/podcast/625635587bfca4e73e990703" target="_blank" rel="noopener" class="btn btn-primary" style="white-space:nowrap;">打开小宇宙 →</a>
+      </div>
+    </div>
     <div class="card" style="margin-bottom:16px;">
       <div class="card-header">
         <h3>添加播客</h3>
@@ -67,7 +76,8 @@ async function renderPodcastList(container) {
               <div style="flex:1;">
                 <h4>${escapeHtml(p.title)}</h4>
                 <p style="font-size:0.85rem;color:var(--text-secondary);">📻 ${escapeHtml(p.episode || '')} · ${p.duration || 0}分钟</p>
-                ${p.url ? `<a href="${p.url}" target="_blank" style="font-size:0.82rem;">🔗 打开链接</a>` : ''}
+                ${p.url ? `<a href="${p.url}" target="_blank" rel="noopener" style="font-size:0.82rem;margin-right:10px;">${p.url.includes('xiaoyuzhou') ? '🎧 在小宇宙打开' : '🔗 打开链接'}</a>` : ''}
+                <a href="https://www.xiaoyuzhoufm.com/search?q=${encodeURIComponent(p.title)}" target="_blank" rel="noopener" style="font-size:0.82rem;">🎧 小宇宙搜索</a>
                 <button class="btn btn-sm btn-primary" onclick="addPodcastNote(${p.id})" style="margin-top:8px;">✍️ 添加笔记</button>
                 <button class="btn btn-sm btn-success" onclick="markPodDone(${p.id})" style="margin-top:8px;">✅ 标记已听</button>
               </div>
