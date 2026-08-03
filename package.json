@@ -1,0 +1,14 @@
+{
+  "name": "maizi-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "麦子的工作台 PWA - 本地优先个人工作台（纯前端，可一键部署到 GitHub Pages）",
+  "scripts": {
+    "start": "npx --yes serve .",
+    "serve:backend": "node server.js"
+  },
+  "optionalDependencies": {
+    "express": "^4.19.2",
+    "fast-xml-parser": "^4.4.0"
+  }
+}

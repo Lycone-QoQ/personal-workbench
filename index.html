@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light" data-pixel="on">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f0eb">
+<title>麦子的工作台</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===================== 自定义背景图层 ===================== -->
+<div id="app-bg" class="app-bg"></div>
+
+<!-- ===================== 侧边导航 ===================== -->
+<aside id="sidebar" class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">🌾 麦子的工作台</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav">
+    <a class="nav-item active" data-page="dashboard">
+      <span class="nav-icon">🏠</span><span class="nav-label">首页总览</span>
+    </a>
+    <a class="nav-item" data-page="exam">
+      <span class="nav-icon">📚</span><span class="nav-label">教资备考</span>
+    </a>
+    <a class="nav-item" data-page="english">
+      <span class="nav-icon">🔤</span><span class="nav-label">英语学习</span>
+    </a>
+    <a class="nav-item" data-page="accounting">
+      <span class="nav-icon">💰</span><span class="nav-label">日常记账</span>
+    </a>
+    <a class="nav-item" data-page="diary">
+      <span class="nav-icon">📝</span><span class="nav-label">日记随笔</span>
+    </a>
+    <a class="nav-item" data-page="fitness">
+      <span class="nav-icon">💪</span><span class="nav-label">运动饮食</span>
+    </a>
+    <a class="nav-item" data-page="politics">
+      <span class="nav-icon">📰</span><span class="nav-label">时政资讯</span>
+    </a>
+    <a class="nav-item" data-page="podcast">
+      <span class="nav-icon">🎙️</span><span class="nav-label">播客管理</span>
+    </a>
+    <a class="nav-item" data-page="speech">
+      <span class="nav-icon">🎤</span><span class="nav-label">表达练习</span>
+    </a>
+    <a class="nav-item" data-page="tasks">
+      <span class="nav-icon">✅</span><span class="nav-label">任务管理</span>
+    </a>
+    <a class="nav-item" data-page="memos">
+      <span class="nav-icon">💡</span><span class="nav-label">备忘录</span>
+    </a>
+    <a class="nav-item" data-page="garden">
+      <span class="nav-icon">🌳</span><span class="nav-label">积分花园</span>
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="nav-item" data-page="settings">
+      <span class="nav-icon">⚙️</span><span class="nav-label">设置</span>
+    </a>
+    <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式">🌓</button>
+  </div>
+</aside>
+
+<!-- ===================== 主内容区 ===================== -->
+<main id="mainContent" class="main-content">
+
+  <!-- ===== 首页总览 ===== -->
+  <section id="page-dashboard" class="page active">
+    <header class="page-header"><h1>🏠 首页总览</h1></header>
+    <div class="dashboard-grid">
+      <div class="card" id="card-todos">
+        <div class="card-header"><h3>📋 今日待办</h3><span class="card-badge" id="todoCount">0</span></div>
+        <div class="card-body" id="todoList"><p class="empty-hint">暂无待办，去任务管理添加吧~</p></div>
+      </div>
+      <div class="card" id="card-countdown">
+        <div class="card-header"><h3>⏳ 教资考试倒计时</h3></div>
+        <div class="card-body countdown-body">
+          <div class="countdown-big" id="examCountdown">--</div>
+          <div class="countdown-label">距离考试还有</div>
+          <div class="countdown-date" id="examDate">请先设置考试日期</div>
+        </div>
+      </div>
+      <div class="card" id="card-study-summary">
+        <div class="card-header"><h3>📊 学习数据</h3></div>
+        <div class="card-body" id="studySummary">
+          <div class="stat-row"><span>今日学习</span><span id="statToday">0 分钟</span></div>
+          <div class="stat-row"><span>本周学习</span><span id="statWeek">0 小时</span></div>
+          <div class="stat-row"><span>连续打卡</span><span id="statStreak">0 天</span></div>
+        </div>
+      </div>
+      <div class="card" id="card-accounting-brief">
+        <div class="card-header"><h3>💳 本月记账速览</h3></div>
+        <div class="card-body" id="accountingBrief">
+          <div class="stat-row"><span>本月支出</span><span class="text-red" id="briefExpense">¥0</span></div>
+          <div class="stat-row"><span>本月收入</span><span class="text-green" id="briefIncome">¥0</span></div>
+          <div class="stat-row"><span>月度预算</span><span id="briefBudget">¥0</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="budgetProgress" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="card" id="card-quote">
+        <div class="card-header"><h3>✨ 每日一句</h3></div>
+        <div class="card-body quote-body">
+          <p class="quote-text" id="dailyQuote">Loading...</p>
+          <p class="quote-zh" id="dailyQuoteZh"></p>
+          <p class="quote-author" id="quoteAuthor"></p>
+          <p class="quote-analysis" id="dailyQuoteAnalysis"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 教资备考专区 ===== -->
+  <section id="page-exam" class="page">
+    <header class="page-header"><h1>📚 教资备考专区</h1></header>
+    <div class="tab-bar" id="examTabs">
+      <button class="tab active" data-tab="exam-knowledge">知识点库</button>
+      <button class="tab" data-tab="exam-recite">每日背诵</button>
+      <button class="tab" data-tab="exam-errors">错题本</button>
+      <button class="tab" data-tab="exam-history">历年真题</button>
+      <button class="tab" data-tab="exam-ebbinghaus">艾宾浩斯打卡</button>
+      <button class="tab" data-tab="exam-teaching">试讲素材</button>
+      <button class="tab" data-tab="exam-settings">考试设置</button>
+    </div>
+    <div class="tab-content" id="examTabContent"></div>
+  </section>
+
+  <!-- ===== 英语学习中心 ===== -->
+  <section id="page-english" class="page">
+    <header class="page-header"><h1>🔤 英语学习中心</h1></header>
+    <div class="tab-bar" id="englishTabs">
+      <button class="tab active" data-tab="eng-quest">🎮 闯关学习</button>
+      <button class="tab" data-tab="eng-speak">🎤 口语练习</button>
+      <button class="tab" data-tab="eng-listen">🎧 听力训练</button>
+      <button class="tab" data-tab="eng-vocab">📖 生词本</button>
+      <button class="tab" data-tab="eng-patterns">✍️ 句型收藏</button>
+    </div>
+    <div class="tab-content" id="englishTabContent"></div>
+  </section>
+
+  <!-- ===== 日常记账 ===== -->
+  <section id="page-accounting" class="page">
+    <header class="page-header"><h1>💰 日常记账</h1></header>
+    <div class="tab-bar" id="accountingTabs">
+      <button class="tab active" data-tab="acc-record">收支记录</button>
+      <button class="tab" data-tab="acc-stats">统计分析</button>
+      <button class="tab" data-tab="acc-budget">预算管控</button>
+    </div>
+    <div class="tab-content" id="accountingTabContent"></div>
+  </section>
+
+  <!-- ===== 日记随笔 ===== -->
+  <section id="page-diary" class="page">
+    <header class="page-header"><h1>📝 日记随笔</h1></header>
+    <div class="tab-bar" id="diaryTabs">
+      <button class="tab active" data-tab="diary-write">写日记</button>
+      <button class="tab" data-tab="diary-list">时间线</button>
+    </div>
+    <div class="tab-content" id="diaryTabContent"></div>
+  </section>
+
+  <!-- ===== 运动饮食 ===== -->
+  <section id="page-fitness" class="page">
+    <header class="page-header"><h1>💪 运动&饮食记录</h1></header>
+    <div class="tab-bar" id="fitnessTabs">
+      <button class="tab active" data-tab="fit-exercise">运动打卡</button>
+      <button class="tab" data-tab="fit-diet">饮食记录</button>
+      <button class="tab" data-tab="fit-water">饮水量</button>
+      <button class="tab" data-tab="fit-stats">数据统计</button>
+    </div>
+    <div class="tab-content" id="fitnessTabContent"></div>
+  </section>
+
+  <!-- ===== 时政资讯 ===== -->
+  <section id="page-politics" class="page">
+    <header class="page-header"><h1>📰 时政素材 · 半月谈</h1></header>
+    <div class="tab-bar" id="politicsTabs">
+      <button class="tab active" data-tab="headlines">📋 要闻速览</button>
+      <button class="tab" data-tab="comments">💬 评论解读</button>
+      <button class="tab" data-tab="policy">📜 政策文件</button>
+      <button class="tab" data-tab="quotes">💎 每日金句</button>
+      <button class="tab" data-tab="bookmarks">⭐ 我的收藏</button>
+    </div>
+    <div class="tab-content" id="politicsTabContent"></div>
+  </section>
+
+  <!-- ===== 播客管理 ===== -->
+  <section id="page-podcast" class="page">
+    <header class="page-header"><h1>🎙️ 播客管理</h1></header>
+    <div class="tab-bar" id="podcastTabs">
+      <button class="tab active" data-tab="pod-list">播客清单</button>
+      <button class="tab" data-tab="pod-stats">收听统计</button>
+    </div>
+    <div class="tab-content" id="podcastTabContent"></div>
+  </section>
+
+  <!-- ===== 表达练习 ===== -->
+  <section id="page-speech" class="page">
+    <header class="page-header"><h1>🎤 表达能力练习</h1></header>
+    <div class="tab-bar" id="speechTabs">
+      <button class="tab active" data-tab="sp-practice">练习题库</button>
+      <button class="tab" data-tab="sp-records">练习记录</button>
+      <button class="tab" data-tab="sp-progress">进步趋势</button>
+    </div>
+    <div class="tab-content" id="speechTabContent"></div>
+  </section>
+
+  <!-- ===== 任务管理 ===== -->
+  <section id="page-tasks" class="page">
+    <header class="page-header"><h1>✅ 学习任务管理</h1></header>
+    <div class="tab-bar" id="tasksTabs">
+      <button class="tab active" data-tab="task-list">任务列表</button>
+      <button class="tab" data-tab="task-timer">番茄钟</button>
+      <button class="tab" data-tab="task-stats">计时统计</button>
+      <button class="tab" data-tab="task-review">复盘模板</button>
+    </div>
+    <div class="tab-content" id="tasksTabContent"></div>
+  </section>
+
+  <!-- ===== 备忘录 ===== -->
+  <section id="page-memos" class="page">
+    <header class="page-header"><h1>💡 备忘录&灵感速记</h1></header>
+    <div class="tab-bar" id="memosTabs">
+      <button class="tab active" data-tab="memo-list">全部备忘</button>
+      <button class="tab" data-tab="memo-trash">回收站</button>
+    </div>
+    <div class="tab-content" id="memosTabContent"></div>
+  </section>
+
+  <!-- ===== 积分花园 ===== -->
+  <section id="page-garden" class="page">
+    <header class="page-header"><h1>🌳 积分花园</h1></header>
+    <div id="gardenContent"></div>
+  </section>
+
+  <!-- ===== 设置页面 ===== -->
+  <section id="page-settings" class="page">
+    <header class="page-header"><h1>⚙️ 设置</h1></header>
+    <div class="tab-bar" id="settingsTabs">
+      <button class="tab active" data-tab="set-icons">图标管理</button>
+      <button class="tab" data-tab="set-theme">主题自定义</button>
+      <button class="tab" data-tab="set-data">数据管理</button>
+      <button class="tab" data-tab="set-notify">通知设置</button>
+    </div>
+    <div class="tab-content" id="settingsTabContent"></div>
+  </section>
+
+</main>
+
+<!-- ===================== 全局搜索弹窗 ===================== -->
+<div class="modal-overlay" id="searchModal">
+  <div class="modal-content search-modal">
+    <div class="search-input-wrap">
+      <input type="text" id="globalSearchInput" placeholder="🔍 全局搜索..." autofocus>
+      <button class="btn-icon" id="closeSearch">✕</button>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+</div>
+
+<!-- ===================== 涂鸦画板弹窗 ===================== -->
+<div class="modal-overlay" id="doodleModal">
+  <div class="modal-content doodle-modal">
+    <div class="doodle-toolbar">
+      <button class="doodle-tool" data-tool="pen">✏️ 画笔</button>
+      <button class="doodle-tool" data-tool="eraser">🧹 橡皮</button>
+      <button class="doodle-tool" data-tool="line">📏 直线</button>
+      <button class="doodle-tool" data-tool="circle">⭕ 圆形</button>
+      <button class="doodle-tool" data-tool="arrow">➡️ 箭头</button>
+      <input type="color" id="doodleColor" value="#333333">
+      <input type="range" id="doodleSize" min="1" max="20" value="3">
+      <button class="doodle-tool" id="doodleUndo">↩️ 撤销</button>
+      <button class="doodle-tool" id="doodleRedo">↪️ 重做</button>
+      <button class="doodle-tool" id="doodleClear">🗑️ 清空</button>
+      <button class="doodle-tool" id="doodleSave">💾 保存</button>
+      <button class="doodle-tool" id="doodleClose">✕ 关闭</button>
+    </div>
+    <canvas id="doodleCanvas"></canvas>
+  </div>
+</div>
+
+<!-- ===================== 成就弹窗 ===================== -->
+<div class="modal-overlay" id="achievementModal">
+  <div class="modal-content achievement-modal">
+    <h2>🏆 成就徽章</h2>
+    <div class="achievement-grid" id="achievementGrid"></div>
+    <button class="btn btn-primary" id="closeAchievement">关闭</button>
+  </div>
+</div>
+
+<!-- ===================== 周报弹窗 ===================== -->
+<div class="modal-overlay" id="weeklyReportModal">
+  <div class="modal-content weekly-report-modal" id="weeklyReportContent"></div>
+</div>
+
+<!-- ===================== Toast 通知 ===================== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===================== 浮动工具栏 ===================== -->
+<div class="floating-tools">
+  <button class="float-btn" id="btnDoodle" title="手绘涂鸦">🎨</button>
+  <button class="float-btn" id="btnSearch" title="全局搜索">🔍</button>
+  <button class="float-btn" id="btnAchievement" title="成就徽章">🏆</button>
+  <button class="float-btn" id="btnGarden" title="积分花园">🌳</button>
+  <button class="float-btn" id="btnWeeklyReport" title="周报卡片">📊</button>
+  <button class="float-btn" id="btnAmbient" title="学习白噪音">🎵</button>
+  <button class="float-btn" id="btnBackTop" title="回到顶部">⬆️</button>
+</div>
+
+<!-- ===================== 学习白噪音面板 ===================== -->
+<div class="ambient-panel" id="ambientPanel">
+  <div class="ambient-panel-head">
+    <span>🎵 学习白噪音</span>
+    <button class="ambient-close" id="ambientClose" aria-label="关闭">✕</button>
+  </div>
+  <div class="ambient-types">
+    <button class="ambient-type active" data-noise="white">🌫️ 白噪音</button>
+    <button class="ambient-type" data-noise="pink">🌸 粉噪音</button>
+    <button class="ambient-type" data-noise="brown">🌊 棕噪音</button>
+  </div>
+  <div class="ambient-row">
+    <button class="btn btn-primary btn-sm" id="ambientToggle">▶️ 播放</button>
+    <input type="range" id="ambientVolume" min="0" max="1" step="0.05" value="0.4" title="音量">
+  </div>
+  <p class="ambient-tip">Web Audio 实时生成 · 离线可用 · 助你专注学习 🌾</p>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/data/exam_knowledge_preset.js"></script>
+<script src="js/data/exam_koujue_preset.js"></script>
+<script src="js/data/exam_history_preset.js"></script>
+<script src="js/data/exam_quiz_preset.js"></script>
+<script src="js/data/eng_courses_preset.js"></script>
+<script src="js/data/politics_preset.js"></script>
+<script src="js/modules/dashboard.js"></script>
+<script src="js/modules/exam.js"></script>
+<script src="js/modules/english.js"></script>
+<script src="js/modules/accounting.js"></script>
+<script src="js/modules/diary.js"></script>
+<script src="js/modules/fitness.js"></script>
+<script src="js/modules/politics.js"></script>
+<script src="js/modules/podcast.js"></script>
+<script src="js/modules/speech.js"></script>
+<script src="js/modules/tasks.js"></script>
+<script src="js/modules/memos.js"></script>
+<script src="js/modules/settings.js"></script>
+<script src="js/modules/garden.js"></script>
+<script src="js/components/doodle.js"></script>
+<script src="js/components/achievements.js"></script>
+<script src="js/components/weekly-report.js"></script>
+<script src="js/components/notifications.js"></script>
+<script src="js/components/ambient.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
