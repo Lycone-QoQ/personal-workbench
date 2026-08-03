@@ -14,6 +14,10 @@
 #     该托管域的 WebView 源里，覆盖安装不会清空（源不变）。
 #  3) 仓库需开启写权限：Settings → Actions → General →
 #     Workflow permissions 勾选「Read and write permissions」。
+#  4) Bubblewrap 的 init/build 在 CI 无 TTY 环境下会交互式询问
+#     “是否安装 JDK/Android SDK”（已知 issue #806），故用
+#     `bubblewrap updateConfig` 预置路径 + `yes n` 喂入 “No，用自带 JDK/SDK”
+#     实现非交互；签名密码通过 BUBBLEWRAP_KEY* 环境变量传入。
 # =============================================================
 
 name: Build Android APK
@@ -33,11 +37,13 @@ env:
   MANIFEST_URL: "https://b54fde817d814265850a5de96f78913e.bj2.agentos-app.net/manifest.json"
   APP_ID: "com.workdesk.study"          # 包名，全局唯一即可
   APP_NAME: "个人综合工作台"
+  # 自签名密钥（仅用于侧载安装，非上架 Google Play）
+  KEYSTORE_PWD: "android"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: 拉取仓库代码
         uses: actions/checkout@v4
@@ -47,7 +53,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: 安装 JDK 17（Bubblewrap 构建需要）
+      - name: 安装 JDK 17（Bubblewrap/Gradle 构建需要）
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -59,29 +65,54 @@ jobs:
       - name: 安装 Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
-      - name: 生成签名密钥（用于给 APK 签名，自签名即可侧载安装）
+      - name: 预置 Bubblewrap 的 JDK / Android SDK 路径（消除交互提示）
+        run: |
+          SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "ANDROID_SDK=$SDK_PATH"
+          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$SDK_PATH"
+
+      - name: 生成签名密钥（自签名，用于给 APK 签名侧载）
         run: |
           keytool -genkeypair -v \
             -keystore android.keystore \
             -alias android \
             -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
+            -storepass "$KEYSTORE_PWD" -keypass "$KEYSTORE_PWD" \
             -dname "CN=Maizi, OU=Workbench, O=Maizi, C=CN"
 
       - name: 初始化 TWA 工程（从托管 manifest 生成，非交互）
-        run: bubblewrap init --manifest "$MANIFEST_URL" --url "$HOST_URL" --appId "$APP_ID" --appName "$APP_NAME" --display standalone
+        # `yes n` 回答 “是否安装 JDK/Android SDK” → 选 No 使用已安装的版本
+        # 用 PIPESTATUS 取 bubblewrap 真实退出码（避免 yes 因 SIGPIPE 误报失败）
+        run: |
+          set +e
+          yes n | bubblewrap init --manifest "$MANIFEST_URL" --url "$HOST_URL" --appId "$APP_ID" --appName "$APP_NAME" --display standalone
+          status=${PIPESTATUS[1]}
+          set -e
+          exit $status
 
       - name: 写入签名配置（让 build 非交互）
         run: |
-          cat > android/keystore.properties <<'EOF'
+          mkdir -p android
+          cat > android/keystore.properties <<EOF
           storeFile=../android.keystore
-          storePassword=android
-          keyPassword=android
+          storePassword=$KEYSTORE_PWD
+          keyPassword=$KEYSTORE_PWD
           keyAlias=android
           EOF
 
       - name: 构建并签名 APK
-        run: bubblewrap build --skipVersionCheck
+        # 跳过 PWA 质量校验（避免无关失败）；签名密码由环境变量传入
+        # 用 PIPESTATUS 取 bubblewrap 真实退出码（避免 yes 因 SIGPIPE 误报失败）
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ env.KEYSTORE_PWD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ env.KEYSTORE_PWD }}
+        run: |
+          set +e
+          yes n | bubblewrap build --skipPwaValidation
+          status=${PIPESTATUS[1]}
+          set -e
+          exit $status
 
       - name: 上传 APK 到 Release 版本页
         uses: softprops/action-gh-release@v2
