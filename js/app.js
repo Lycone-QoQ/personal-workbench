@@ -4,8 +4,9 @@
 let themeManager, navbar, doodleBoard, ambientPlayer, bgmPlayer;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Service Worker 更新后自动刷新，确保新版本代码真正生效（避免旧缓存残留）
+  // Service Worker：注册 + 更新后自动刷新，确保新版本真正生效（路径用相对，兼容任意部署根目录）
   if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       window.location.reload();
     });

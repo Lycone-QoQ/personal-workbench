@@ -33,8 +33,8 @@ permissions:
 
 env:
   # 应用托管地址（TWA 运行时加载此地址，需与应用实际部署地址一致）
-  HOST_URL: "https://b54fde817d814265850a5de96f78913e.bj2.agentos-app.net"
-  MANIFEST_URL: "https://b54fde817d814265850a5de96f78913e.bj2.agentos-app.net/manifest.json"
+  HOST_URL: "https://443cc7bf3d3944348f9c2bd800aa53f6.bj6.agentos-app.net"
+  MANIFEST_URL: "https://443cc7bf3d3944348f9c2bd800aa53f6.bj6.agentos-app.net/manifest.json"
   APP_ID: "com.workdesk.study"          # 包名，全局唯一即可
   APP_NAME: "个人综合工作台"
   # 自签名密钥（仅用于侧载安装，非上架 Google Play）

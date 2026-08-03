@@ -2,52 +2,60 @@
  * Service Worker - 离线缓存 & PWA 支持
  * 缓存策略：network-first（联网时始终拉取最新文件，离线时回退缓存）
  * —— 避免旧版代码被永久缓存导致修复无法下发
+ *
+ * 注意：所有路径使用「相对路径」，使本应用能同时兼容
+ *   - CloudStudio 根目录部署（/）
+ *   - GitHub Pages 子目录部署（/personal-workbench/）
+ * 注册在页面侧（app.js）用 './sw.js'，scope 自动等于 sw.js 所在目录。
  */
 const CACHE_NAME = 'workbench-v3';
 const ASSETS = [
-  '/personal-workbench/',
-  '/personal-workbench/index.html',
-  '/personal-workbench/css/style.css',
-  '/personal-workbench/js/db.js',
-  '/personal-workbench/js/theme.js',
-  '/personal-workbench/js/app.js',
-  '/personal-workbench/js/components/navbar.js',
-  '/personal-workbench/js/components/doodle.js',
-  '/personal-workbench/js/components/achievements.js',
-  '/personal-workbench/js/components/weekly-report.js',
-  '/personal-workbench/js/components/notifications.js',
-  '/personal-workbench/js/modules/dashboard.js',
-  '/personal-workbench/js/modules/exam.js',
-  '/personal-workbench/js/modules/english.js',
-  '/personal-workbench/js/modules/accounting.js',
-  '/personal-workbench/js/modules/diary.js',
-  '/personal-workbench/js/modules/fitness.js',
-  '/personal-workbench/js/modules/politics.js',
-  '/personal-workbench/js/modules/podcast.js',
-  '/personal-workbench/js/modules/speech.js',
-  '/personal-workbench/js/modules/tasks.js',
-  '/personal-workbench/js/modules/memos.js',
-  '/personal-workbench/js/modules/settings.js',
-  '/personal-workbench/js/modules/garden.js',
-  '/personal-workbench/manifest.json'
+  './',
+  './index.html',
+  './manifest.json',
+  './css/style.css',
+  './js/db.js',
+  './js/theme.js',
+  './js/app.js',
+  './js/data/exam_knowledge_preset.js',
+  './js/components/navbar.js',
+  './js/components/doodle.js',
+  './js/components/achievements.js',
+  './js/components/weekly-report.js',
+  './js/components/notifications.js',
+  './js/components/bgm.js',
+  './js/components/sfx.js',
+  './js/modules/dashboard.js',
+  './js/modules/exam.js',
+  './js/modules/english.js',
+  './js/modules/accounting.js',
+  './js/modules/diary.js',
+  './js/modules/fitness.js',
+  './js/modules/politics.js',
+  './js/modules/podcast.js',
+  './js/modules/speech.js',
+  './js/modules/tasks.js',
+  './js/modules/memos.js',
+  './js/modules/settings.js',
+  './js/modules/garden.js'
 ];
 
-// 安装
+// 安装：预缓存核心资源（失败不阻塞）
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS).catch(() => {}))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS).catch(() => {}))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// 激活：删除所有旧版本缓存，确保旧代码彻底失效
+// 激活：清除旧版本缓存，接管所有页面
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 // 拦截请求：联网优先（拿最新），失败再用缓存（保离线）
@@ -66,15 +74,6 @@ self.addEventListener('fetch', event => {
         }
         return res;
       })
-      .catch(() => caches.match(req).then(cached => cached || caches.match('/personal-workbench/index.html')))
+      .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html') || caches.match('./')))
   );
 });
-
-// 注册 Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/personal-workbench/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW registration failed:', err));
-  });
-}

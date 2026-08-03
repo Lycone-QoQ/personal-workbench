@@ -781,6 +781,7 @@ async function showAddHistory() {
 
 // ---- 艾宾浩斯背诵打卡 ----
 async function renderEbbinghaus(container) {
+  await ensureEbbinghausPresets(); // 首次打开自动载入教资预设卡片
   const items = await DB.getAll('exam_ebbinghaus');
   const intervals = [1, 2, 4, 7, 15, 30]; // 艾宾浩斯复习间隔（天）
 
@@ -790,7 +791,7 @@ async function renderEbbinghaus(container) {
         <h3>艾宾浩斯背诵打卡</h3>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-primary btn-sm" onclick="showAddEbbinghaus()">+ 添加背诵内容</button>
-          <button class="btn btn-sm" onclick="showImportEbbinghausDialog()">📥 JSON导入</button>
+          <button class="btn btn-sm" onclick="restoreEbbinghausPresets()">🔄 恢复预设</button>
         </div>
       </div>
       <div class="card-body">
@@ -815,7 +816,7 @@ async function renderEbbinghaus(container) {
               <div class="card" style="margin-bottom:10px;padding:14px;${todayReviews.length > 0 ? 'border-left:3px solid var(--accent);' : ''}">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div style="flex:1;">
-                    <h4>${escapeHtml(item.title)} ${item.source !== 'manual' ? '<span class="tag" style="cursor:default;background:var(--bg-secondary);color:var(--text-secondary);">🔒 固定导入</span>' : ''}</h4>
+                    <h4>${escapeHtml(item.title)} ${item.source === 'preset' ? '<span class="tag" style="cursor:default;background:var(--bg-secondary);color:var(--text-secondary);">🔒 预设</span>' : (item.source === 'import' ? '<span class="tag" style="cursor:default;background:var(--bg-secondary);color:var(--text-secondary);">🔒 固定导入</span>' : '')}</h4>
                     <p style="font-size:0.82rem;color:var(--text-muted);">开始日期: ${item.startDate}</p>
                     ${item.content ? `<p style="margin-top:6px;color:var(--text-secondary);font-size:0.88rem;line-height:1.6;">${escapeHtml(item.content)}</p>` : ''}
                     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
@@ -901,117 +902,37 @@ async function toggleEbbinghausReview(itemId, day) {
   renderExamTab('exam-ebbinghaus');
 }
 
-// ---- 艾宾浩斯 JSON 批量导入知识点 ----
-async function showImportEbbinghausDialog() {
-  const container = document.getElementById('examTabContent');
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <h3>📥 JSON 导入背诵知识点</h3>
-        <button class="btn-icon" onclick="renderExamTab('exam-ebbinghaus')">✕</button>
-      </div>
-      <div class="card-body">
-        <p style="color:var(--text-secondary);margin-bottom:12px;">
-          粘贴 JSON 格式的背诵知识点（可批量导入多条，自动生成 Day1/2/4/7/15/30 复习计划）：
-        </p>
-        <details style="margin-bottom:12px;">
-          <summary style="cursor:pointer;color:var(--accent);font-size:0.9rem;">📋 查看 JSON 格式说明</summary>
-          <pre style="background:var(--bg);padding:12px;border-radius:8px;margin-top:8px;font-size:0.8rem;overflow-x:auto;">[
-  {
-    "title": "背诵内容标题（必填）",
-    "startDate": "2026-08-03",
-    "content": "可选的知识点内容/笔记"
-  }
-]</pre>
-          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">
-            startDate 可省略（默认今天）；content 可省略；可一次导入多条
-          </p>
-        </details>
-        <textarea id="importEbbinghausJson" class="form-input" rows="12" placeholder='粘贴 JSON 数据...' style="font-family:monospace;font-size:0.85rem;width:100%;"></textarea>
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="executeImportEbbinghaus()">确认导入</button>
-          <button class="btn btn-sm" style="background:var(--bg);" onclick="renderExamTab('exam-ebbinghaus')">取消</button>
-          <button class="btn btn-sm" style="background:var(--bg);margin-left:auto;" onclick="fillEbbinghausDemo()">填入示例数据</button>
-        </div>
-        <div id="importEbbinghausResult" style="margin-top:8px;"></div>
-      </div>
-    </div>
-  `;
-}
-
-function fillEbbinghausDemo() {
-  const textarea = document.getElementById('importEbbinghausJson');
-  if (!textarea) return;
-  const today = new Date().toISOString().split('T')[0];
-  const demo = [
-    { title: '教育观（素质教育的内涵）', startDate: today, content: '提高国民素质为根本宗旨；面向全体学生；促进学生全面发展；促进个性发展；以培养创新精神和实践能力为重点。' },
-    { title: '学生观（以人为本）', content: '两独一发：学生是发展的人、独特的人、具有独立意义的人。' },
-    { title: '教师观（新课改）', content: '教师是课程的开发者、学生学习的引导者与合作者、教育教学的研究者、社区型开放教师。' }
-  ];
-  textarea.value = JSON.stringify(demo, null, 2);
-}
-
-async function executeImportEbbinghaus() {
-  const text = document.getElementById('importEbbinghausJson')?.value?.trim();
-  const resultDiv = document.getElementById('importEbbinghausResult');
-  if (!text) {
-    if (resultDiv) resultDiv.innerHTML = '<p style="color:var(--danger);">请输入 JSON 数据</p>';
-    return;
-  }
-  let data;
+// ---- 艾宾浩斯 预置教资卡片（自动载入，不可删除） ----
+async function ensureEbbinghausPresets() {
   try {
-    data = JSON.parse(text);
-    if (!Array.isArray(data)) throw new Error('数据必须是数组格式');
-  } catch (e) {
-    if (resultDiv) resultDiv.innerHTML = '<p style="color:var(--danger);">JSON 格式错误：' + e.message + '</p>';
-    return;
-  }
-  const today = new Date().toISOString().split('T')[0];
-  const validItems = [];
-  const errors = [];
-  data.forEach((item, i) => {
-    if (!item.title) { errors.push('第' + (i + 1) + '条缺少标题'); return; }
-    validItems.push({
-      title: item.title,
-      startDate: item.startDate || today,
-      content: item.content || '',
-      reviewedDays: [],
-      source: 'import',
-      createdAt: new Date().toISOString()
-    });
-  });
-  if (validItems.length === 0) {
-    if (resultDiv) resultDiv.innerHTML = '<p style="color:var(--danger);">没有有效数据可导入。错误：' + errors.join('；') + '</p>';
-    return;
-  }
-  try {
-    // 按标题去重合并：已存在的导入项标记 source=import（锁定保护），只新增不存在的
+    if (typeof PRESET_EBBINGHAUS === 'undefined' || !Array.isArray(PRESET_EBBINGHAUS)) return;
     const existing = await DB.getAll('exam_ebbinghaus');
-    const existingByTitle = new Map(existing.map(e => [e.title, e]));
-    const toAdd = [];
-    let lockedCount = 0;
-    for (const v of validItems) {
-      const match = existingByTitle.get(v.title);
-      if (match) {
-        if (match.source !== 'import') {
-          match.source = 'import';
-          await DB.put('exam_ebbinghaus', match);
-        }
-        lockedCount++;
-      } else {
-        toAdd.push(v);
-      }
+    if (existing.some(e => e.source === 'preset')) return; // 已载入过，避免重复
+    const existingTitles = new Set(existing.map(e => e.title));
+    const today = new Date().toISOString().split('T')[0];
+    const toAdd = PRESET_EBBINGHAUS
+      .filter(p => p && p.title && !existingTitles.has(p.title))
+      .map(p => ({
+        title: p.title,
+        category: p.category || '',
+        content: p.content || '',
+        startDate: today,
+        reviewedDays: [],
+        source: 'preset',
+        createdAt: new Date().toISOString()
+      }));
+    if (toAdd.length > 0) {
+      await DB.bulkAdd('exam_ebbinghaus', toAdd);
     }
-    let addedCount = 0;
-    if (toAdd.length > 0) addedCount = await DB.bulkAdd('exam_ebbinghaus', toAdd);
-    let msg = '新增 ' + addedCount + ' 条、锁定已有 ' + lockedCount + ' 条固定导入内容（不可删除）。';
-    if (errors.length > 0) msg += '（' + errors.join('；') + '）';
-    showToast(msg, 'success');
-    if (addedCount > 0) addCoins(Math.min(addedCount * 2, 30));
-    setTimeout(() => renderExamTab('exam-ebbinghaus'), 500);
   } catch (e) {
-    if (resultDiv) resultDiv.innerHTML = '<p style="color:var(--danger);">导入失败：' + e.message + '</p>';
+    console.error('ensureEbbinghausPresets error:', e);
   }
+}
+
+async function restoreEbbinghausPresets() {
+  await ensureEbbinghausPresets();
+  showToast('已恢复教资预设打卡卡片 🔒', 'success');
+  renderExamTab('exam-ebbinghaus');
 }
 
 // ---- 试讲素材 ----
@@ -1245,9 +1166,8 @@ window.showAddError = showAddError;
 window.showAddHistory = showAddHistory;
 window.showAddEbbinghaus = showAddEbbinghaus;
 window.saveEbbinghausFromDialog = saveEbbinghausFromDialog;
-window.showImportEbbinghausDialog = showImportEbbinghausDialog;
-window.executeImportEbbinghaus = executeImportEbbinghaus;
-window.fillEbbinghausDemo = fillEbbinghausDemo;
+window.ensureEbbinghausPresets = ensureEbbinghausPresets;
+window.restoreEbbinghausPresets = restoreEbbinghausPresets;
 window.saveExamSettings = saveExamSettings;
 window.deleteExamItem = deleteExamItem;
 window.toggleEbbinghausReview = toggleEbbinghausReview;
