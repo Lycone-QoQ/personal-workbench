@@ -1309,6 +1309,8 @@ html[data-pixel="on"] .countdown-big {
   right: 16px;
   bottom: 84px;
   width: 268px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -1347,6 +1349,26 @@ html[data-pixel="on"] .countdown-big {
 .ambient-tip {
   font-size: 0.72rem; color: var(--text-muted); margin-top: 10px; line-height: 1.5;
 }
+.ambient-section-title {
+  font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
+  margin: 14px 0 8px; padding-top: 10px; border-top: 1px dashed var(--border-color);
+}
+.ambient-section-title:first-of-type { margin-top: 2px; border-top: none; padding-top: 0; }
+.bgm-tracks { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.bgm-track {
+  padding: 7px 10px; font-size: 0.8rem; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color); background: var(--bg-secondary);
+  color: var(--text-secondary); cursor: pointer; text-align: left;
+  transition: all var(--transition);
+}
+.bgm-track:hover { color: var(--text-primary); background: var(--bg-hover); }
+.bgm-track.active {
+  background: var(--accent-light); color: var(--accent-dark);
+  border-color: var(--accent); font-weight: 600;
+}
+.bgm-now {
+  font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; text-align: center;
+}
 
 /* 像素风下的白噪音面板 */
 html[data-pixel="on"] .ambient-panel {
@@ -1360,3 +1382,10 @@ html[data-pixel="on"] .ambient-type {
   box-shadow: var(--pixel-shadow-sm);
 }
 html[data-pixel="on"] .ambient-type.active { box-shadow: var(--pixel-shadow-press); }
+html[data-pixel="on"] .bgm-track {
+  border: 2px solid var(--pixel-edge);
+  font-family: var(--font-pixel-cn);
+  box-shadow: var(--pixel-shadow-sm);
+}
+html[data-pixel="on"] .bgm-track.active { box-shadow: var(--pixel-shadow-press); }
+html[data-pixel="on"] .ambient-section-title { border-top-color: var(--pixel-edge); }

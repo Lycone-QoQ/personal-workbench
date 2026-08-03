@@ -317,9 +317,21 @@
 <!-- ===================== 学习白噪音面板 ===================== -->
 <div class="ambient-panel" id="ambientPanel">
   <div class="ambient-panel-head">
-    <span>🎵 学习白噪音</span>
+    <span>🎵 背景音乐</span>
     <button class="ambient-close" id="ambientClose" aria-label="关闭">✕</button>
   </div>
+
+  <div class="ambient-section-title">🎼 纯音乐（随机生成）</div>
+  <div class="bgm-tracks" id="bgmTracks"></div>
+  <div class="ambient-row">
+    <button class="btn btn-sm" id="bgmPrev" title="上一首">⏮️</button>
+    <button class="btn btn-primary btn-sm" id="bgmToggle">▶️ 播放</button>
+    <button class="btn btn-sm" id="bgmNext" title="下一首">⏭️</button>
+    <button class="btn btn-sm" id="bgmRandom" title="随机一首">🎲</button>
+  </div>
+  <div class="bgm-now" id="bgmNow">未播放 · 点击曲目开始</div>
+
+  <div class="ambient-section-title">🌫️ 学习白噪音</div>
   <div class="ambient-types">
     <button class="ambient-type active" data-noise="white">🌫️ 白噪音</button>
     <button class="ambient-type" data-noise="pink">🌸 粉噪音</button>
@@ -359,6 +371,7 @@
 <script src="js/components/weekly-report.js"></script>
 <script src="js/components/notifications.js"></script>
 <script src="js/components/ambient.js"></script>
+<script src="js/components/bgm.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

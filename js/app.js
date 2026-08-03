@@ -1,7 +1,7 @@
 /**
  * 应用主入口 - 麦子的工作台 V1.0
  */
-let themeManager, navbar, doodleBoard, ambientPlayer;
+let themeManager, navbar, doodleBoard, ambientPlayer, bgmPlayer;
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Service Worker 更新后自动刷新，确保新版本代码真正生效（避免旧缓存残留）
@@ -168,6 +168,7 @@ function escapeHtml(str) {
 // ---- 学习白噪音播放器初始化 ----
 function initAmbient() {
   ambientPlayer = new AmbientPlayer();
+  bgmPlayer = new BgmPlayer();
   const panel = document.getElementById('ambientPanel');
   const btn = document.getElementById('btnAmbient');
   const toggle = document.getElementById('ambientToggle');
@@ -178,6 +179,83 @@ function initAmbient() {
   btn.addEventListener('click', () => panel.classList.toggle('show'));
   closeBtn.addEventListener('click', () => panel.classList.remove('show'));
 
+  // ---------- 纯音乐 ----------
+  const bgmTracks = document.getElementById('bgmTracks');
+  const bgmToggle = document.getElementById('bgmToggle');
+  const bgmPrev = document.getElementById('bgmPrev');
+  const bgmNext = document.getElementById('bgmNext');
+  const bgmRandom = document.getElementById('bgmRandom');
+  const bgmNow = document.getElementById('bgmNow');
+
+  function updateBgmUI() {
+    if (!bgmTracks) return;
+    bgmTracks.querySelectorAll('.bgm-track').forEach(x =>
+      x.classList.toggle('active', parseInt(x.dataset.index, 10) === bgmPlayer.currentIndex && bgmPlayer.playing));
+    if (bgmToggle) bgmToggle.textContent = bgmPlayer.playing ? '⏸ 暂停' : '▶️ 播放';
+    if (bgmNow) bgmNow.textContent = bgmPlayer.playing ? bgmPlayer.getTrackName() : '未播放 · 点击曲目开始';
+  }
+
+  function stopBgm() {
+    if (bgmPlayer.playing) { bgmPlayer.pause(); }
+  }
+  function stopNoise() {
+    if (ambientPlayer.playing) {
+      ambientPlayer.pause();
+      toggle.textContent = '▶️ 播放';
+    }
+  }
+
+  // 渲染曲目按钮
+  if (bgmTracks) {
+    bgmPlayer.tracks.forEach((t, i) => {
+      const b = document.createElement('button');
+      b.className = 'bgm-track';
+      b.dataset.index = i;
+      b.textContent = t.name;
+      b.addEventListener('click', async () => {
+        stopNoise();
+        const ok = await bgmPlayer.play(i);
+        if (ok) btn.textContent = '🎶';
+        DB.put('settings', { key: 'bgmTrack', value: i });
+        updateBgmUI();
+      });
+      bgmTracks.appendChild(b);
+    });
+  }
+
+  const startBgm = async () => {
+    stopNoise();
+    const ok = await bgmPlayer.play();
+    if (ok) btn.textContent = '🎶';
+    updateBgmUI();
+  };
+
+  if (bgmToggle) bgmToggle.addEventListener('click', async () => {
+    if (bgmPlayer.playing) { bgmPlayer.pause(); btn.textContent = '🎵'; }
+    else { await startBgm(); }
+  });
+  if (bgmPrev) bgmPrev.addEventListener('click', async () => {
+    const name = bgmPlayer.prev();
+    if (!bgmPlayer.playing) await startBgm();
+    updateBgmUI();
+  });
+  if (bgmNext) bgmNext.addEventListener('click', async () => {
+    bgmPlayer.next();
+    if (!bgmPlayer.playing) await startBgm();
+    updateBgmUI();
+  });
+  if (bgmRandom) bgmRandom.addEventListener('click', async () => {
+    bgmPlayer.random();
+    if (!bgmPlayer.playing) await startBgm();
+    updateBgmUI();
+  });
+
+  DB.get('settings', 'bgmTrack').then(r => {
+    if (r && typeof r.value === 'number') bgmPlayer.currentIndex = r.value;
+    updateBgmUI();
+  });
+
+  // ---------- 白噪音 ----------
   // 读取已保存偏好
   const applySaved = (type, volume) => {
     if (type) {
@@ -187,6 +265,7 @@ function initAmbient() {
     }
     if (volume != null) {
       ambientPlayer.volume = parseFloat(volume);
+      bgmPlayer.setVolume(parseFloat(volume));
       vol.value = ambientPlayer.volume;
     }
   };
@@ -204,7 +283,7 @@ function initAmbient() {
     });
   });
 
-  // 播放 / 暂停
+  // 播放 / 暂停（与纯音乐互斥）
   toggle.addEventListener('click', async () => {
     if (ambientPlayer.playing) {
       ambientPlayer.pause();
@@ -212,6 +291,8 @@ function initAmbient() {
       btn.textContent = '🎵';
       return;
     }
+    stopBgm();
+    updateBgmUI();
     const ok = await ambientPlayer.play();
     if (ok) {
       toggle.textContent = '⏸ 暂停';
@@ -219,9 +300,10 @@ function initAmbient() {
     }
   });
 
-  // 音量
+  // 音量（纯音乐 / 白噪音共用）
   vol.addEventListener('input', () => {
     ambientPlayer.setVolume(parseFloat(vol.value));
+    bgmPlayer.setVolume(parseFloat(vol.value));
     DB.put('settings', { key: 'ambientVolume', value: vol.value });
   });
 }
