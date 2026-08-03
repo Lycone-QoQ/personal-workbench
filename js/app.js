@@ -255,6 +255,15 @@ function initAmbient() {
     updateBgmUI();
   });
 
+  // 分享歌单：在网易云打开时，暂停本地纯音乐 / 白噪音，避免声音重叠
+  const playlistOpen = document.getElementById('bgmPlaylistOpen');
+  if (playlistOpen) {
+    playlistOpen.addEventListener('click', () => {
+      if (bgmPlayer.playing) { bgmPlayer.pause(); btn.textContent = '🎵'; updateBgmUI(); }
+      if (ambientPlayer.playing) { ambientPlayer.pause(); toggle.textContent = '▶️ 播放'; }
+    });
+  }
+
   // ---------- 白噪音 ----------
   // 读取已保存偏好
   const applySaved = (type, volume) => {

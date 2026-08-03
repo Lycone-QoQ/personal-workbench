@@ -1379,6 +1379,37 @@ html[data-pixel="on"] .countdown-big {
 .bgm-now {
   font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; text-align: center;
 }
+/* 分享歌单卡片 */
+.bgm-playlist-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-secondary); border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px;
+}
+.bgm-playlist-cover {
+  flex: 0 0 auto; width: 46px; height: 46px; border-radius: 8px;
+  background: linear-gradient(135deg, #f3d9e6, #d9e6f3);
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+.bgm-playlist-meta { flex: 1; min-width: 0; }
+.bgm-playlist-title {
+  font-size: 0.84rem; font-weight: 600; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bgm-playlist-sub {
+  font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bgm-playlist-open {
+  display: inline-block; font-size: 0.74rem; color: var(--accent-dark);
+  background: var(--accent-light); border: 1px solid var(--accent);
+  padding: 3px 10px; border-radius: 999px; text-decoration: none; cursor: pointer;
+  transition: all var(--transition);
+}
+.bgm-playlist-open:hover { background: var(--accent); color: #fff; }
+.bgm-playlist-iframe {
+  width: 100%; height: 86px; border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm); margin-bottom: 4px; background: #f7f7f7;
+}
 
 /* 像素风下的白噪音面板 */
 html[data-pixel="on"] .ambient-panel {
