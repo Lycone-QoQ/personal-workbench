@@ -149,6 +149,7 @@ async function renderThemeSettings(container) {
   const cardOpacity = (await DB.get('settings', 'cardOpacity'))?.value || 1;
   const fontSize = (await DB.get('settings', 'fontSize'))?.value || 0;
   const pixelOn = (await DB.get('settings', 'pixel'))?.value !== 'off';
+  const sfxOn = (await DB.get('settings', 'sfxEnabled'))?.value !== 'false';
   const bgImage = (await DB.get('settings', 'bgImage'))?.value;
   const bgOpacity = (await DB.get('settings', 'bgOpacity'))?.value || 1;
 
@@ -166,6 +167,17 @@ async function renderThemeSettings(container) {
           <span>星露谷像素风（厚描边 / 硬阴影 / 方块化，保留原有配色）</span>
         </label>
         <p style="font-size:0.82rem;color:var(--text-muted);margin-top:8px;">关闭则回到原本的柔和治愈风格。</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h3>🔊 交互音效</h3></div>
+      <div class="card-body">
+        <label class="checkbox-wrap" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="sfxToggle" ${sfxOn ? 'checked' : ''} onchange="toggleSfx(this.checked)">
+          <span>按键点击音效（轻柔提示音 + 积分花园种植 / 浇水 / 施肥特效）</span>
+        </label>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-top:8px;">关闭则所有交互静音。音效为 Web Audio 实时合成，无需联网、无音频文件。</p>
       </div>
     </div>
 
@@ -289,6 +301,14 @@ function changeFontSize(level) {
 function togglePixelStyle(on) {
   themeManager.togglePixelStyle(on);
   showToast(on ? '已开启星露谷像素风 🌾' : '已恢复柔和治愈风格', 'success');
+}
+
+// ---- 交互音效开关 ----
+async function toggleSfx(on) {
+  if (typeof Sfx !== 'undefined') Sfx.enabled = !!on;
+  await DB.put('settings', { key: 'sfxEnabled', value: String(on) });
+  showToast(on ? '已开启按键音效 🔊' : '已关闭按键音效', 'success');
+  if (on && typeof Sfx !== 'undefined') Sfx.click();
 }
 
 async function uploadBgImage(input) {
@@ -492,6 +512,7 @@ window.exportModule = exportModule;
 window.clearAllData = clearAllData;
 window.toggleNotifications = toggleNotifications;
 window.togglePixelStyle = togglePixelStyle;
+window.toggleSfx = toggleSfx;
 window.uploadBgImage = uploadBgImage;
 window.updateBgOpacity = updateBgOpacity;
 window.clearBgImage = clearBgImage;

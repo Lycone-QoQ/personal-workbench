@@ -84,7 +84,7 @@ async function renderGardenModule() {
             const nextStageMs = calcNextStageMs(t, stage);
             const stagePct = calcStagePct(t, stage);
             return `
-              <div class="garden-tree-card" onclick="showGardenTreeDetail(${t.id})">
+              <div class="garden-tree-card" id="garden-tree-${t.id}" data-tree-id="${t.id}" onclick="showGardenTreeDetail(${t.id})">
                 <div class="garden-tree-icon ${stage >= 4 ? 'blooming' : ''} ${isCustomIcon ? 'custom-icon' : ''}">
                   ${isCustomIcon ? `<img src="${escapeHtml(t.customIcon)}" alt="" style="width:52px;height:52px;object-fit:contain;">` : getStageEmoji(typeDef, stage)}
                 </div>
@@ -150,7 +150,7 @@ async function renderGardenModule() {
             onkeydown="if(event.key==='Enter')confirmPlant()">
           <div style="display:flex;gap:10px;">
             <button class="btn" onclick="closePlantModal()" style="flex:1;">取消</button>
-            <button class="btn btn-primary" onclick="confirmPlant()" style="flex:1;">🌱 确认种植</button>
+            <button class="btn btn-primary" data-sfx="garden" onclick="confirmPlant()" style="flex:1;">🌱 确认种植</button>
           </div>
         </div>
       </div>
@@ -270,6 +270,15 @@ async function confirmPlant() {
   showToast(`🌱 ${typeDef.name}种下啦！用心呵护它成长吧~`, 'success');
   closePlantModal();
   renderGardenModule();
+
+  // 种植特效 + 专属音效
+  if (window.Sfx) {
+    const p = Sfx.lastPointer;
+    Sfx.plant();
+    spawnRing(p.x, p.y, typeDef.color);
+    spawnParticles(p.x, p.y, ['🌱', '✨', '🌿', '💫', '🌟'], 18, { spread: 100, rise: 60, size: 24 });
+  }
+  setTimeout(() => popTree(), 80);
 }
 
 // 详情弹窗内改名（替代被禁用的 prompt）
@@ -327,10 +336,10 @@ async function showGardenTreeDetail(treeId) {
 
       <!-- 呵护按钮 -->
       <div style="display:flex;gap:8px;justify-content:center;margin:12px 0;flex-wrap:wrap;">
-        <button class="btn btn-sm" onclick="waterGardenTree(${tree.id})" ${coins < WATER_COST ? 'disabled style="opacity:0.4;"' : ''}>
+        <button class="btn btn-sm" data-sfx="garden" onclick="waterGardenTree(${tree.id})" ${coins < WATER_COST ? 'disabled style="opacity:0.4;"' : ''}>
           💧 浇水 (-${WATER_COST}🪙)
         </button>
-        <button class="btn btn-sm" onclick="fertilizeGardenTree(${tree.id})" ${coins < FERTILIZE_COST ? 'disabled style="opacity:0.4;"' : ''}>
+        <button class="btn btn-sm" data-sfx="garden" onclick="fertilizeGardenTree(${tree.id})" ${coins < FERTILIZE_COST ? 'disabled style="opacity:0.4;"' : ''}>
           🌸 施肥 (-${FERTILIZE_COST}🪙)
         </button>
       </div>
@@ -376,6 +385,21 @@ function closeGardenTreeDetail(e) {
   gardenDetailTree = null;
 }
 
+// 让某棵树卡片（或最新的那棵）弹一下，作为种植/呵护的视觉反馈
+function popTree(treeId) {
+  let card;
+  if (treeId != null) {
+    card = document.querySelector(`#gardenGrid .garden-tree-card[data-tree-id="${treeId}"]`);
+  } else {
+    card = document.querySelector('#gardenGrid .garden-tree-card');
+  }
+  if (card) {
+    card.classList.remove('tree-pop');
+    void card.offsetWidth; // 触发重排以重启动画
+    card.classList.add('tree-pop');
+  }
+}
+
 // ---- 浇水 ----
 async function waterGardenTree(treeId) {
   const tree = await DB.get('garden_trees', treeId);
@@ -393,6 +417,14 @@ async function waterGardenTree(treeId) {
   // 如果弹窗开着，重新渲染弹窗
   if (document.getElementById('gardenDetailOverlay')?.style.display === 'flex') {
     showGardenTreeDetail(treeId);
+  }
+
+  // 浇水特效 + 专属音效
+  if (window.Sfx) {
+    Sfx.water();
+    const p = Sfx.lastPointer;
+    spawnParticles(p.x, p.y, ['💧', '💦', '🌿'], 14, { spread: 70, rise: 30, size: 20 });
+    popTree(treeId);
   }
 }
 
@@ -412,6 +444,14 @@ async function fertilizeGardenTree(treeId) {
   renderGardenModule();
   if (document.getElementById('gardenDetailOverlay')?.style.display === 'flex') {
     showGardenTreeDetail(treeId);
+  }
+
+  // 施肥特效 + 专属音效
+  if (window.Sfx) {
+    Sfx.fertilize();
+    const p = Sfx.lastPointer;
+    spawnParticles(p.x, p.y, ['🌸', '🌼', '✨', '💮'], 16, { spread: 80, rise: 36, size: 21 });
+    popTree(treeId);
   }
 }
 
@@ -464,6 +504,7 @@ window.showGardenTreeDetail = showGardenTreeDetail;
 window.closeGardenTreeDetail = closeGardenTreeDetail;
 window.waterGardenTree = waterGardenTree;
 window.fertilizeGardenTree = fertilizeGardenTree;
+window.popTree = popTree;
 window.uploadGardenTreeIcon = uploadGardenTreeIcon;
 window.handleGardenTreeIconUpload = handleGardenTreeIconUpload;
 window.resetGardenTreeIcon = resetGardenTreeIcon;
