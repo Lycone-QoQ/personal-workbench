@@ -815,7 +815,7 @@ async function renderEbbinghaus(container) {
               <div class="card" style="margin-bottom:10px;padding:14px;${todayReviews.length > 0 ? 'border-left:3px solid var(--accent);' : ''}">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div style="flex:1;">
-                    <h4>${escapeHtml(item.title)}</h4>
+                    <h4>${escapeHtml(item.title)} ${item.source !== 'manual' ? '<span class="tag" style="cursor:default;background:var(--bg-secondary);color:var(--text-secondary);">🔒 固定导入</span>' : ''}</h4>
                     <p style="font-size:0.82rem;color:var(--text-muted);">开始日期: ${item.startDate}</p>
                     ${item.content ? `<p style="margin-top:6px;color:var(--text-secondary);font-size:0.88rem;line-height:1.6;">${escapeHtml(item.content)}</p>` : ''}
                     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
@@ -826,7 +826,9 @@ async function renderEbbinghaus(container) {
                       `).join('')}
                     </div>
                   </div>
-                  <button class="btn-icon" onclick="deleteExamItem('exam_ebbinghaus',${item.id})">🗑️</button>
+                  ${item.source !== 'manual'
+                    ? '<span class="btn-icon" title="固定导入的 JSON 内容不可删除" style="opacity:.45;cursor:not-allowed;">🔒</span>'
+                    : `<button class="btn-icon" onclick="deleteExamItem('exam_ebbinghaus',${item.id})">🗑️</button>`}
                 </div>
               </div>
             `;
@@ -876,6 +878,7 @@ async function saveEbbinghausFromDialog() {
   await DB.add('exam_ebbinghaus', {
     title, startDate, content,
     reviewedDays: [],
+    source: 'manual',
     createdAt: new Date().toISOString()
   });
   showToast('背诵计划已添加', 'success');
@@ -973,6 +976,7 @@ async function executeImportEbbinghaus() {
       startDate: item.startDate || today,
       content: item.content || '',
       reviewedDays: [],
+      source: 'import',
       createdAt: new Date().toISOString()
     });
   });
@@ -981,11 +985,29 @@ async function executeImportEbbinghaus() {
     return;
   }
   try {
-    const count = await DB.bulkAdd('exam_ebbinghaus', validItems);
-    const msg = '成功导入 ' + count + ' 条背诵知识点！';
+    // 按标题去重合并：已存在的导入项标记 source=import（锁定保护），只新增不存在的
+    const existing = await DB.getAll('exam_ebbinghaus');
+    const existingByTitle = new Map(existing.map(e => [e.title, e]));
+    const toAdd = [];
+    let lockedCount = 0;
+    for (const v of validItems) {
+      const match = existingByTitle.get(v.title);
+      if (match) {
+        if (match.source !== 'import') {
+          match.source = 'import';
+          await DB.put('exam_ebbinghaus', match);
+        }
+        lockedCount++;
+      } else {
+        toAdd.push(v);
+      }
+    }
+    let addedCount = 0;
+    if (toAdd.length > 0) addedCount = await DB.bulkAdd('exam_ebbinghaus', toAdd);
+    let msg = '新增 ' + addedCount + ' 条、锁定已有 ' + lockedCount + ' 条固定导入内容（不可删除）。';
     if (errors.length > 0) msg += '（' + errors.join('；') + '）';
     showToast(msg, 'success');
-    addCoins(Math.min(count * 2, 30));
+    if (addedCount > 0) addCoins(Math.min(addedCount * 2, 30));
     setTimeout(() => renderExamTab('exam-ebbinghaus'), 500);
   } catch (e) {
     if (resultDiv) resultDiv.innerHTML = '<p style="color:var(--danger);">导入失败：' + e.message + '</p>';
@@ -1082,6 +1104,14 @@ async function saveExamSettings() {
 
 // 通用删除
 async function deleteExamItem(store, id) {
+  if (store === 'exam_ebbinghaus') {
+    const item = await DB.get('exam_ebbinghaus', id);
+    // 固定导入内容（JSON导入）与未明确标记手动添加的内容均不可删除，防止误删固定资料
+    if (item && item.source !== 'manual') {
+      showToast('固定导入的 JSON 内容不可删除', 'warning');
+      return;
+    }
+  }
   if (!confirm('确定删除？')) return;
   await DB.delete(store, id);
   showToast('已删除', 'success');
