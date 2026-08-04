@@ -6,6 +6,7 @@ node_modules/
 install.log
 _*.js
 _*.html
+_*.json
 _eb_*
 
 # 系统文件
